@@ -9,6 +9,9 @@ const BASE =
   process.env.REACT_APP_LOCAL_BACKEND ||
   process.env.REACT_APP_BACKEND_PROXY;
 
+const token = sessionStorage.getItem("token");
+ 
+  
 const api = axios.create({
   baseURL: `${BASE}/api`,
   headers: {
