@@ -19,7 +19,7 @@ class CloudinaryUploadWidget extends Component {
           document
             .getElementById("uploadedimage")
             .setAttribute("src", result.info.secure_url);
-          this.props.uploadImage(result.info.secure_url);
+          this.props.uploadImage(result.info.secure_url);  // string 값
         }
       } //https://cloudinary.com/documentation/react_image_and_video_upload
     );

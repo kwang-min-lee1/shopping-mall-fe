@@ -37,9 +37,12 @@ const Navbar = ({ user }) => {
       navigate(`?name=${event.target.value}`);
     }
   };
+
+
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logout({navigate}));
   };
+
   return (
     <div>
       {showSearchBox && (

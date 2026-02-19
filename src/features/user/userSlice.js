@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-
 import { showToastMessage } from "../common/uiSlice";
 import api from "../../utils/api";
+import axios from "axios";
 import { initialCart } from "../cart/cartSlice";
 
 export const loginWithEmail = createAsyncThunk(
@@ -30,7 +30,39 @@ export const loginWithGoogle = createAsyncThunk(
   async (token, { rejectWithValue }) => {}
 );
 
-export const logout = () => (dispatch) => {};
+export const logout = createAsyncThunk(
+  "user/logout",
+  async ({ navigate }, { dispatch, rejectWithValue }) => {
+    try {
+      // 성공(로그아웃 처리)
+      // 1) 토큰 제거 (너는 sessionStorage에 token 저장)
+      sessionStorage.removeItem("token");
+
+      // 2) 유저 상태 초기화 (slice reducer 필요)
+      dispatch(logoutSuccess());
+
+      // 3) 장바구니 초기화 (이미 import 되어있음)
+      dispatch(initialCart());
+
+      // 4) 성공 토스트
+      dispatch(
+        showToastMessage({ message: "로그아웃 성공", status: "success" })
+      );
+
+      // 5) 로그인 페이지로 리다이렉트
+      if (navigate) navigate("/login");
+
+      return null;
+    } catch (error) {
+      // 실패
+      dispatch(
+        showToastMessage({ message: "로그아웃 실패", status: "error" })
+      );
+      return rejectWithValue(error?.error || error?.message || error);
+    }
+  }
+);
+
 
 export const registerUser = createAsyncThunk(
   "user/registerUser",
@@ -82,7 +114,16 @@ const userSlice = createSlice({
       state.loginError = null;
       state.registrationError = null;
     },
+   //  로그아웃 시 유저 상태 초기화
+    logoutSuccess: (state) => {
+    state.user = null;
+    state.loading = false;
+    state.loginError = null;
+    state.registrationError = null;
+    state.success = false;
   },
+},
+  
   extraReducers: (builder) => {
     builder.addCase(registerUser.pending,(state)=>{
       state.loading = true;
@@ -113,5 +154,5 @@ const userSlice = createSlice({
 
   },
 });
-export const { clearErrors } = userSlice.actions;
+export const { clearErrors, logoutSuccess } = userSlice.actions;
 export default userSlice.reducer;
