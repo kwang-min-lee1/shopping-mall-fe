@@ -71,14 +71,16 @@ const NewItemDialog = ({ mode, showDialog, setShowDialog }) => {
     if(stock.length === 0) return setStockError(true);
 
     // 재고를 배열에서 객체로 바꿔주기 (reduce: array를 읽어와서 내가 원하는 형태로 바꾸어 주는 함수)
+    // [['M',2]] 에서 {M:2}로
     const totalStock = stock.reduce((total,item)=>{
       return {...total,[item[0]]:parseInt(item[1])} // ex) [[("s","3")][("m","4")]]; => {s:3,m:4}
     },{})
     console.log("formdata", totalStock);
 
-    // [['M',2]] 에서 {M:2}로
+
     if (mode === "new") {
       //새 상품 만들기
+      dispatch(createProduct({...formData, stock: totalStock }));
     } else {
       // 상품 수정하기
     }
