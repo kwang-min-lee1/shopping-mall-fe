@@ -38,11 +38,18 @@ const AdminProductPage = () => {
 
   //상품리스트 가져오기 (url쿼리 맞춰서)
   useEffect(()=>{
-    dispatch(getProductList())
-  },[])
+    dispatch(getProductList({...searchQuery}));
+  },[query]);
 
   useEffect(() => {
     //검색어나 페이지가 바뀌면 url바꿔주기 (검색어또는 페이지가 바뀜 => url 바꿔줌=> url쿼리 읽어옴=> 이 쿼리값 맞춰서  상품리스트 가져오기)
+    if(searchQuery.name === ""){
+      delete searchQuery.name;
+    }
+    const params = new URLSearchParams(searchQuery);
+    const queryString = params.toString();
+    navigate("?"+queryString);
+    
   }, [searchQuery]);
 
   const deleteItem = (id) => {
@@ -63,7 +70,15 @@ const AdminProductPage = () => {
 
   const handlePageClick = ({ selected }) => {
     //  쿼리에 페이지값 바꿔주기
+    setSearchQuery({...searchQuery, page: selected +1 });
+    // console.log("selected", selected);
   };
+
+  // [검색의 메커니즘]
+  // searchbox에서 검색어를 읽어온다 => 엔터를 치면 => searchQuery 객체가 업데이트 됨 {name: 스트레이트 팬츠}
+  // => searchQuery 객체 안에 아이템을 기준으로 url을 새로 생성해서 호출 (&name=스트레이츠+팬츠) 
+  // => url 쿼리 읽어오기
+  // => url 쿼리 기준으로 BE에 검색조건과 함께 호출한다.
 
   return (
     <div className="locate-center">
@@ -90,7 +105,7 @@ const AdminProductPage = () => {
           nextLabel="next >"
           onPageChange={handlePageClick}
           pageRangeDisplayed={5}
-          pageCount={100}
+          pageCount={totalPageNum}  // 전체페이지
           forcePage={searchQuery.page - 1}
           previousLabel="< previous"
           renderOnZeroPageCount={null}
