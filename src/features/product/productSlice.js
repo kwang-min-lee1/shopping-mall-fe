@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
 import { showToastMessage } from "../common/uiSlice";
+import { faLessThanEqual } from "@fortawesome/free-solid-svg-icons";
 
 // 비동기 액션 생성
 export const getProductList = createAsyncThunk(
@@ -30,6 +31,7 @@ export const createProduct = createAsyncThunk(
       const response = await api.post("/product", formData);
       if(response.status !== 200) throw new Error(response.error);
       dispatch(showToastMessage({message:"상품 생성 완료", status:"success"}));
+      dispatch(getProductList({page:1}));
       return response.data.data;
     }catch(error){
       return rejectWithValue(error.error);
@@ -44,7 +46,17 @@ export const deleteProduct = createAsyncThunk(
 
 export const editProduct = createAsyncThunk(
   "products/editProduct",
-  async ({ id, ...formData }, { dispatch, rejectWithValue }) => {}
+  async ({ id, ...formData }, { dispatch, rejectWithValue }) => {
+    try{
+      const response = await api.put(`/product/${id}`,formData);  // 백틱(`):문자열 안에 변수(id)를 그대로 넣기 위해 쓰임
+      if(response.status!==200) throw new Error(response.error);  // 예) const id = '123';
+      dispatch(getProductList({page:1}));                         //     `/product/${id}`
+                                                                  //    결과: "/product/123"
+      return response.data.data;
+    }catch(error){
+      return rejectWithValue(error.error);
+    }
+  }
 );
 
 // 슬라이스 생성
@@ -102,6 +114,19 @@ const productSlice = createSlice({
       state.error = action.payload;
       
     })
+    .addCase(editProduct.pending, (state,action)=>{
+      state.loading = true;
+    })
+    .addCase(editProduct.fulfilled, (state,action)=>{
+      state.loading = false;
+      state.error = "";      // 에러값 초기화
+      state.success = true;  // edit 성공 -> 팝업을 닫아줘야 함 -> 팝업 닫는데 이용했던 변수 success 활용
+    })
+    .addCase(editProduct.rejected, (state,action)=>{
+      state.loading = false;
+      state.error = action.payload;
+      state.success = false;
+    });
   },
 });
 
