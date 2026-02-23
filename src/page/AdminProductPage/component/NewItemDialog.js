@@ -118,7 +118,8 @@ const NewItemDialog = ({ mode, showDialog, setShowDialog }) => {
   const handleStockChange = (value, index) => {
     //재고 수량 변환하기
     const newStock = [...stock];
-    newStock[index][1] = value;
+    const v = Math.max(0, parseInt(value || "0", 10)); // <-- 추가
+    newStock[index][1] = v;
     setStock(newStock);
   };
 
@@ -240,6 +241,8 @@ const NewItemDialog = ({ mode, showDialog, setShowDialog }) => {
                       handleStockChange(event.target.value, index)
                     }
                     type="number"
+                    min={0}
+                    step={1}
                     placeholder="number of stock"
                     value={item[1]}
                     required
