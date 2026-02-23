@@ -16,7 +16,7 @@ const api = axios.create({
   baseURL: `${BASE}/api`,
   headers: {
     "Content-Type": "application/json",
-    authorization: `Bearer ${sessionStorage.getItem("token")}`,
+    // authorization: `Bearer ${sessionStorage.getItem("token")}`,   // 메인페이지에서 화면 안보이는 현상을 위해 강사의 코드를 주석처리 함
   },
 });
 
@@ -37,7 +37,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (request) => {
     console.log("Starting Request", request);
-    request.headers.authorization = `Bearer ${sessionStorage.getItem("token")}`;
+
+    const token = sessionStorage.getItem("token");
+    if (token) request.headers.authorization = `Bearer ${token}`;
+    else delete request.headers.authorization;
+
+    // request.headers.authorization = `Bearer ${sessionStorage.getItem("token")}`; // 메인페이지에서 화면 안보이는 현상을 위해 강사의 코드를 주석처라 하고 위 세줄 코드 넣음
+
     return request;
   },
   function (error) {

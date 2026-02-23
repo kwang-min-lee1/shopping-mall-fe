@@ -21,7 +21,24 @@ export const getProductList = createAsyncThunk(
 
 export const getProductDetail = createAsyncThunk(
   "products/getProductDetail",
-  async (id, { rejectWithValue }) => {}
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/product/${id}`);
+      if (response.status !== 200) throw new Error(response.error);
+
+      // ✅ 백엔드가 product를 어떻게 보내는지에 따라 1줄만 선택
+      // 1) res.json({ status:"success", product })
+      return response.data.product;
+
+      // 2) res.json({ status:"success", data: product })
+      // return response.data.data;
+
+      // 3) res.json(product)  (바로 product만 보내는 경우)
+      // return response.data;
+    } catch (error) {
+      return rejectWithValue(error.error || error.message);
+    }
+  }
 );
 
 export const createProduct = createAsyncThunk(
@@ -126,7 +143,21 @@ const productSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
       state.success = false;
-    });
+    })
+
+     // 화면 안나옴 해결을 위해 강사와 다르게 추가 코드 작성함
+    .addCase(getProductDetail.pending, (state) => {
+      state.loading = true;
+    })
+    .addCase(getProductDetail.fulfilled, (state, action) => {
+      state.loading = false;
+      state.selectedProduct = action.payload;
+      state.error = "";
+    })
+    .addCase(getProductDetail.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    });    
   },
 });
 
