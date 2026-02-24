@@ -28,7 +28,7 @@ const ProductDetail = () => {
     if(!user) navigate("/login");
 
     // 카트에 아이템 추가하기
-    dispatch(addToCart({id,size}));
+    dispatch(addToCart({productId:id,size}));
   };
   const selectSize = (value) => {
     // 사이즈 추가하기
