@@ -39,7 +39,16 @@ export const addToCart = createAsyncThunk(
 
 export const getCartList = createAsyncThunk(
   "cart/getCartList",
-  async (_, { rejectWithValue, dispatch }) => {}
+  async (_, { rejectWithValue }) => {  // 강사가 제시한 코드인  dispatch 제거 (카드 페이지에 아무것도 안나오는 오류생김)
+    try{
+      const response = await api.get("/cart");
+      if(response.status!==200) throw new Error(response.error);
+      return response.data.data;
+    }catch(error){
+      // return rejectWithValue(error.error);
+      return rejectWithValue(error?.error || error?.message || error);
+    }
+  }
 );
 
 export const deleteCartItem = createAsyncThunk(
@@ -80,7 +89,24 @@ const cartSlice = createSlice({
       .addCase(addToCart.rejected,(state, action)=>{
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+      .addCase(getCartList.pending,(state,action)=>{
+        state.loading = true;
+      })
+      .addCase(getCartList.fulfilled,(state,action)=>{
+        state.loading = false;
+        state.error = "";
+        // state.cartList = action.payload;
+        state.cartList = action.payload || [];
+        state.totalPrice = action.payload.reduce(
+          (total,item)=>total+item.productId.price*item.qty,
+          0
+        );
+      })
+      .addCase(getCartList.rejected,(state,action)=>{
+        state.loading = false;
+        state.error = action.payload;
+      })
   },
 });
 
