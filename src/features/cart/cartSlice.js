@@ -37,7 +37,7 @@ export const addToCart = createAsyncThunk(
           status:"error",
         })
       );
-      return rejectWithValue(error.error);
+      return rejectWithValue(msg);
     }
   }
 );
