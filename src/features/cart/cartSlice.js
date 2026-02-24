@@ -27,8 +27,11 @@ export const addToCart = createAsyncThunk(
       return response.data.cartItemQty;  //TODO
     }catch(error) {
       const msg =
-        error?.response?.data?.error || // ✅ 백엔드: { error: "아이템이 이미..." }
-        error?.message ||
+        error?.response?.data?.error ||     // { error: "..." }
+        error?.response?.data?.message ||   // { message: "..." }
+        error?.response?.data?.msg ||       // { msg: "..." } (가끔 이런 형태)
+        error?.error ||                     // api.js가 가공해서 { error: "..." }로 넣는 경우
+        error?.message ||                   // "Request failed with status code 400"
         "카트에 아이템 추가 실패";
 
       dispatch(
