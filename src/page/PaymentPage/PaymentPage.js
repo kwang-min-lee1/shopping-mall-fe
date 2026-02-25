@@ -37,6 +37,7 @@ const PaymentPage = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    navigate("/payment/success");
     // 오더 생성하기
     const {firstName, lastName, contact, address, city, zip} = shipInfo;
     dispatch(createOrder({
@@ -47,7 +48,7 @@ const PaymentPage = () => {
         return {
           productId:item.productId._id,
           price:item.productId.price,
-          qty:item.qyt,
+          qty:item.qty,
           size:item.size,
         };
       }),

@@ -61,17 +61,77 @@ export const getCartList = createAsyncThunk(
 
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteCartItem",
-  async (id, { rejectWithValue, dispatch }) => {}
+  async (id, { rejectWithValue, dispatch }) => {
+        try {
+      const response = await api.delete(`/cart/${id}`);
+      if (response.status !== 200) throw new Error(response?.data?.error);
+
+      dispatch(
+        showToastMessage({
+          message: "카트에서 삭제되었습니다.",
+          status: "success",
+        })
+      );
+
+      // 백엔드가 { data: cart.items, cartItemQty: ... } 이런 형태로 주는 경우
+      return {
+        cartList: response.data.data || [],
+        cartItemQty: response.data.cartItemQty ?? (response.data.data?.length || 0),
+      };
+    } catch (error) {
+      const msg =
+        error?.response?.data?.error ||
+        error?.message ||
+        "삭제 실패";
+
+      dispatch(showToastMessage({ message: msg, status: "error" }));
+      return rejectWithValue(msg);
+    }
+  }
 );
 
 export const updateQty = createAsyncThunk(
   "cart/updateQty",
-  async ({ id, value }, { rejectWithValue }) => {}
+  async ({ id, value }, { rejectWithValue, dispatch}) => {
+    try {
+      const qty = Number(value); // ✅ 문자열 방지
+      const response = await api.put(`/cart/${id}`, { qty: value });
+      if (response.status !== 200) throw new Error(response.error);
+
+      // 수량 변경 후 카트 다시 불러오기 (강의 흐름 유지)
+      dispatch(getCartList());
+
+      return response.data;
+    } catch (error) {
+      dispatch(
+        showToastMessage({
+          message: "수량 변경 실패",
+          status: "error",
+        })
+      );
+      return rejectWithValue(
+        error?.response?.data?.error || error?.message
+      );
+    }
+  }
 );
 
 export const getCartQty = createAsyncThunk(
   "cart/getCartQty",
-  async (_, { rejectWithValue, dispatch }) => {}
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      const res = await api.get("/cart"); // 이미 있는 API 재사용
+      if (res.status !== 200) throw new Error(res?.data?.error);
+
+      // res.data.data = cart.items 배열(너의 getCart가 그렇게 줌)
+      const items = res.data.data || [];
+      return items.length;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.error || error?.message || error
+      );
+    }
+  }
 );
 
 const cartSlice = createSlice({
@@ -106,6 +166,9 @@ const cartSlice = createSlice({
         state.error = "";
         // state.cartList = action.payload;
         state.cartList = action.payload || [];
+
+        state.cartItemCount = (action.payload || []).length;
+
         state.totalPrice = action.payload.reduce(
           (total,item)=>total+item.productId.price*item.qty,
           0
@@ -115,7 +178,32 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-  },
+
+      .addCase(deleteCartItem.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteCartItem.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = "";
+
+        // ✅ 화면에서 바로 없어지게 state 갱신
+        state.cartList = action.payload.cartList || [];
+        state.cartItemCount = action.payload.cartItemQty || 0;
+
+       // ✅ totalPrice 다시 계산
+        state.totalPrice = state.cartList.reduce(
+        (total, item) => total + (item.productId?.price || 0) * (item.qty || 0),
+        0
+        );
+      })
+      .addCase(deleteCartItem.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      }) 
+      .addCase(getCartQty.fulfilled, (state, action) => {
+        state.cartItemCount = action.payload || 0;
+      }) 
+    },
 });
 
 export default cartSlice.reducer;
