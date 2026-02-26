@@ -33,11 +33,13 @@ const PaymentPage = () => {
 
   useEffect(() => {
     // 오더번호를 받으면 어디로 갈까?
-  }, [orderNum]);
+    if(orderNum){
+      navigate("/payment/success");
+    }
+  }, [orderNum,navigate]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    navigate("/payment/success");
     // 오더 생성하기
     const {firstName, lastName, contact, address, city, zip} = shipInfo;
     dispatch(createOrder({
