@@ -120,16 +120,12 @@ export const getCartQty = createAsyncThunk(
   "cart/getCartQty",
   async (_, { rejectWithValue, dispatch }) => {
     try {
-      const res = await api.get("/cart"); // 이미 있는 API 재사용
-      if (res.status !== 200) throw new Error(res?.data?.error);
-
-      // res.data.data = cart.items 배열(너의 getCart가 그렇게 줌)
-      const items = res.data.data || [];
-      return items.length;
+      const response = await api.get("/cart/qty"); 
+      if (response.status !== 200) throw new Error(response.error);
+      return response.data.qty;
     } catch (error) {
-      return rejectWithValue(
-        error?.response?.data?.error || error?.message || error
-      );
+      dispatch(showToastMessage({message:error, status:"error"}));
+      return rejectWithValue(error);
     }
   }
 );
@@ -202,6 +198,17 @@ const cartSlice = createSlice({
       }) 
       .addCase(getCartQty.fulfilled, (state, action) => {
         state.cartItemCount = action.payload || 0;
+      })
+      .addCase(updateQty.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateQty.fulfilled, (state) => {
+        state.loading = false;
+        state.error = "";
+      })
+      .addCase(updateQty.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       }) 
     },
 });

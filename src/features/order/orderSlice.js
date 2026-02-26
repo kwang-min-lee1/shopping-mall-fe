@@ -17,24 +17,20 @@ const initialState = {
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (payload, { fulfillWithValue, rejectWithValue, dispatch }) => {
-    try {
-      // ✅ 강의용: 백엔드 호출 안 함 (가짜 주문번호 생성)
-      return fulfillWithValue(Date.now()); // orderNum만 리턴
-    } catch (error) {
-      return rejectWithValue("주문 생성 실패");
+    try{
+      const response = await api.post("/order", payload);
+      if(response.status!==200) throw new Error(response.error);
+        dispatch(getCartQty());
+        return response.data.orderNum;
+
+    }catch(error){
+      dispatch(showToastMessage({message:error.error,status:"error"}));
+      return rejectWithValue(error.error);
     }
   }
 );
 
-    // try{
-    //   const response = await api.post("/order", payload);
-    //   if(response.status!==200) throw Error(response.error)
-    //     return response.data.orderNum;
-
-    // }catch(error){
-    //   dispatch(showToastMessage({message:error.error,status:"error"}));
-    //   return rejectWithValue(error.error);
-    // }
+    
   
 
 
