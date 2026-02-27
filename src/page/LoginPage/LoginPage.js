@@ -7,9 +7,11 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./style/login.style.css";
 import { loginWithEmail, loginWithGoogle } from "../../features/user/userSlice";
 import { clearErrors } from "../../features/user/userSlice";
+
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 const Login = () => {
+  console.log("GOOGLE_CLIENT_ID =", GOOGLE_CLIENT_ID);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user, loginError } = useSelector((state) => state.user);
@@ -95,6 +97,7 @@ const Login = () => {
                   b) 처음 로그인 시도를 한 유저 => 유저정보 먼저 새로 생성 => 토큰값 
               */}
               <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          
                 <GoogleLoginButton
                   onSuccess={handleGoogleLogin}
                   onError={() => {
