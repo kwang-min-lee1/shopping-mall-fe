@@ -10,11 +10,13 @@ const MyPage = () => {
   const dispatch = useDispatch();
   const { orderList } = useSelector((state) => state.order);
   console.log(orderList);
+
   useEffect(() => {
     dispatch(getOrder());
   }, [dispatch]);
 
-  if (orderList?.length === 0) {
+  // if (orderList?.length === 0) {
+  if (!orderList || orderList.length === 0) {  
     return (
       <Container className="no-order-box">
         <div>진행중인 주문이 없습니다.</div>
