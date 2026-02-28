@@ -48,6 +48,7 @@ api.interceptors.request.use(
   },
   function (error) {
     console.log("REQUEST ERROR", error);
+    return Promise.reject(error);
   }
 );
 
@@ -57,8 +58,8 @@ api.interceptors.response.use(
   },
   function (error) {
     error = error.response.data;
-    console.log("RESPONSE ERROR", error);
-    return Promise.reject(error);
+    console.log("RESPONSE ERROR", error.response?.data || error);
+    return Promise.reject(error.response?.data || error);
   }
 );
 

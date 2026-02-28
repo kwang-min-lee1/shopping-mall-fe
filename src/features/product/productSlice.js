@@ -10,8 +10,7 @@ export const getProductList = createAsyncThunk(
     try{
       const response = await api.get("/product", {params:{...query}});
       console.log("rrr", response);
-      if(response.status != 200) throw new Error(response.error);
-
+      
       return response.data;
     }catch(error){
       return rejectWithValue(error.error);
@@ -24,8 +23,7 @@ export const getProductDetail = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await api.get(`/product/${id}`);
-      if (response.status !== 200) throw new Error(response.error);
-
+      
       // ✅ 백엔드가 product를 어떻게 보내는지에 따라 1줄만 선택
       // 1) res.json({ status:"success", product })
       return response.data.product;
@@ -46,7 +44,7 @@ export const createProduct = createAsyncThunk(
   async (formData, { dispatch, rejectWithValue }) => {
     try{
       const response = await api.post("/product", formData);
-      if(response.status !== 200) throw new Error(response.error);
+      
       dispatch(showToastMessage({message:"상품 생성 완료", status:"success"}));
       dispatch(getProductList({page:1}));
       return response.data.data;
@@ -66,7 +64,7 @@ export const editProduct = createAsyncThunk(
   async ({ id, ...formData }, { dispatch, rejectWithValue }) => {
     try{
       const response = await api.put(`/product/${id}`,formData);  // 백틱(`):문자열 안에 변수(id)를 그대로 넣기 위해 쓰임
-      if(response.status!==200) throw new Error(response.error);  // 예) const id = '123';
+                                                                   // 예) const id = '123';
       dispatch(getProductList({page:1}));                         //     `/product/${id}`
                                                                   //    결과: "/product/123"
       return response.data.data;

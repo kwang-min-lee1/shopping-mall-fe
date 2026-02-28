@@ -17,7 +17,7 @@ export const addToCart = createAsyncThunk(
   async ({ productId, size }, { rejectWithValue, dispatch }) => {
     try{
       const response = await api.post("/cart", {productId,size,qty:1});
-      if(response.status !==200) throw new Error(response.error);
+  
       dispatch(
         showToastMessage({
           message:"카트에 아이템이 추가 되었습니다.", 
@@ -50,7 +50,7 @@ export const getCartList = createAsyncThunk(
   async (_, { rejectWithValue }) => {  // 강사가 제시한 코드인  dispatch 제거 (카드 페이지에 아무것도 안나오는 오류생김)
     try{
       const response = await api.get("/cart");
-      if(response.status!==200) throw new Error(response.error);
+      
       return response.data.data;
     }catch(error){
       // return rejectWithValue(error.error);
@@ -64,7 +64,7 @@ export const deleteCartItem = createAsyncThunk(
   async (id, { rejectWithValue, dispatch }) => {
         try {
       const response = await api.delete(`/cart/${id}`);
-      if (response.status !== 200) throw new Error(response?.data?.error);
+  
 
       dispatch(
         showToastMessage({
@@ -96,7 +96,7 @@ export const updateQty = createAsyncThunk(
     try {
       const qty = Number(value); // ✅ 문자열 방지
       const response = await api.put(`/cart/${id}`, { qty: value });
-      if (response.status !== 200) throw new Error(response.error);
+    
 
       // 수량 변경 후 카트 다시 불러오기 (강의 흐름 유지)
       dispatch(getCartList());
@@ -121,7 +121,7 @@ export const getCartQty = createAsyncThunk(
   async (_, { rejectWithValue, dispatch }) => {
     try {
       const response = await api.get("/cart/qty"); 
-      if (response.status !== 200) throw new Error(response.error);
+     
       return response.data.qty;
     } catch (error) {
       dispatch(showToastMessage({message:error, status:"error"}));
