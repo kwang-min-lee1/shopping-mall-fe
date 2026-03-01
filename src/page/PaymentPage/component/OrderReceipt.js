@@ -4,7 +4,8 @@ import { useNavigate } from "react-router";
 import { useLocation } from "react-router-dom";
 import { currencyFormat } from "../../../utils/number";
 
-const OrderReceipt = ({cartList, totalPrice}) => {
+const OrderReceipt = ({cartList, totalPrice, discountAmount = 0, finalPrice, coupon}) => {
+  const payPrice = typeof finalPrice === "number" ? finalPrice : totalPrice;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -24,12 +25,35 @@ const OrderReceipt = ({cartList, totalPrice}) => {
         ))}
         
       </ul>
+
+       {/* (1) 합계/할인/최종금액: 여기부터 */}
+      <div className="display-flex space-between receipt-title">
+        <div>
+          <strong>Subtotal:</strong>
+        </div>
+        <div>
+          <strong>₩ {currencyFormat(totalPrice)}</strong>
+        </div>
+      </div>
+
+      {/* 쿠폰이 적용된 경우에만 할인 표시 */}
+      {coupon && discountAmount > 0 && (
+        <div className="display-flex space-between receipt-title">
+          <div>
+            <strong>Coupon ({coupon.code}):</strong>
+          </div>
+          <div>
+            <strong>- ₩ {currencyFormat(discountAmount)}</strong>
+          </div>
+        </div>
+      )}
+
       <div className="display-flex space-between receipt-title">
         <div>
           <strong>Total:</strong>
         </div>
         <div>
-          <strong>₩ {currencyFormat(totalPrice)}</strong>
+          <strong>₩ {currencyFormat(payPrice)}</strong>
         </div>
       </div>
       {location.pathname.includes("/cart") && cartList.length > 0 && (
@@ -41,6 +65,7 @@ const OrderReceipt = ({cartList, totalPrice}) => {
           결제 계속하기
         </Button>
       )}
+      
 
       <div>
         가능한 결제 수단 귀하가 결제 단계에 도달할 때까지 가격 및 배송료는

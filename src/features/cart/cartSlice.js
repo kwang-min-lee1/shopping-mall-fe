@@ -9,7 +9,38 @@ const initialState = {
   selectedItem: {},
   cartItemCount: 0,
   totalPrice: 0,
+  
+  // 쿠폰 기능 추가
+  coupon: null,        // { code, type, value }
+  discountAmount: 0,   // 숫자
+  finalPrice: 0,       // totalPrice - discountAmount (최종결제금액)
 };
+
+
+// 쿠폰 기능 추가
+const SHIPPING_FEE = 3000; // 필요없으면 0으로
+const COUPONS = {
+  SAVE10: { type: "percent", value: 10 },     // 10% 할인
+  SAVE5000: { type: "amount", value: 5000 },  // 5000원 할인
+  FREESHIP: { type: "shipping", value: SHIPPING_FEE },
+};
+
+const calcDiscount = (totalPrice, coupon) => {
+  if (!coupon) return 0;
+
+  if (coupon.type === "percent") {
+    return Math.floor((totalPrice * coupon.value) / 100);
+  }
+  if (coupon.type === "amount") {
+    return coupon.value;
+  }
+  if (coupon.type === "shipping") {
+    // 배송비 개념 없으면 0 처리하거나 제거
+    return coupon.value;
+  }
+  return 0;
+};
+
 
 // Async thunk actions
 export const addToCart = createAsyncThunk(
@@ -24,6 +55,7 @@ export const addToCart = createAsyncThunk(
           status:"success",
         })
       );
+      dispatch(getCartList());
       return response.data.cartItemQty;  //TODO
     }catch(error) {
       const msg =
@@ -95,7 +127,7 @@ export const updateQty = createAsyncThunk(
   async ({ id, value }, { rejectWithValue, dispatch}) => {
     try {
       const qty = Number(value); // ✅ 문자열 방지
-      const response = await api.put(`/cart/${id}`, { qty: value });
+      const response = await api.put(`/cart/${id}`, { qty });
     
 
       // 수량 변경 후 카트 다시 불러오기 (강의 흐름 유지)
@@ -136,9 +168,53 @@ const cartSlice = createSlice({
   reducers: {
     initialCart: (state) => {
       state.cartItemCount = 0;
+      state.cartList = [];
+      state.totalPrice = 0;
+      state.coupon = null;
+      state.discountAmount = 0;
+      state.finalPrice = 0;
+      localStorage.removeItem("couponCode");
+      sessionStorage.removeItem("couponCode");
     },
-    // You can still add reducers here for non-async actions if necessary
+     
+    applyCoupon: (state, action) => {
+      const code = (action.payload || "").trim().toUpperCase();
+      const coupon = COUPONS[code];
+
+      if (!coupon) {
+        // 유효하지 않은 쿠폰
+        state.coupon = null;
+        state.discountAmount = 0;
+        state.finalPrice = state.totalPrice;
+        localStorage.removeItem("couponCode");
+        state.error = "유효하지 않은 쿠폰입니다.";
+        return;
+      }
+
+      state.coupon = { code, ...coupon };
+      state.discountAmount = calcDiscount(state.totalPrice, state.coupon);
+
+      // 할인액이 totalPrice를 넘어가지 않게
+      if (state.discountAmount > state.totalPrice) state.discountAmount = state.totalPrice;
+
+      state.finalPrice = state.totalPrice - state.discountAmount;
+      localStorage.setItem("couponCode", code);
+      sessionStorage.setItem("couponCode", code);
+      state.error = "";
+    },
+
+    removeCoupon: (state) => {
+      state.coupon = null;
+      state.discountAmount = 0;
+      state.finalPrice = state.totalPrice;
+      localStorage.removeItem("couponCode");
+      sessionStorage.removeItem("couponCode");
+    },
   },
+    // You can still add reducers here for non-async actions if necessary
+
+
+
   extraReducers: (builder) => {
     builder
       .addCase(addToCart.pending,(state, action)=>{
@@ -161,14 +237,38 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = "";
         // state.cartList = action.payload;
-        state.cartList = action.payload || [];
+        const list = action.payload || [];
+        state.cartList = list;
+        state.cartItemCount = list.length;
 
-        state.cartItemCount = (action.payload || []).length;
-
-        state.totalPrice = action.payload.reduce(
-          (total,item)=>total+item.productId.price*item.qty,
+        state.totalPrice = list.reduce(
+          (total, item) => total + item.productId.price * item.qty,
           0
         );
+        // 쿠폰 적용 상태면 totalPrice 변경에 따라 다시 계산
+        const savedCode = (
+          localStorage.getItem("couponCode") ||
+          sessionStorage.getItem("couponCode") ||
+          ""
+        ).toUpperCase();
+
+        if (savedCode) {
+          const coupon = COUPONS[savedCode];
+          if (coupon) {
+            state.coupon = { code: savedCode, ...coupon };
+            state.discountAmount = calcDiscount(state.totalPrice, state.coupon);
+            if (state.discountAmount > state.totalPrice) state.discountAmount = state.totalPrice;
+            state.finalPrice = state.totalPrice - state.discountAmount;
+          } else {
+            state.coupon = null;
+            state.discountAmount = 0;
+            state.finalPrice = state.totalPrice;
+            localStorage.removeItem("couponCode");
+            sessionStorage.removeItem("couponCode");
+          }
+        } else {
+          state.finalPrice = state.totalPrice;
+        } 
       })
       .addCase(getCartList.rejected,(state,action)=>{
         state.loading = false;
@@ -190,7 +290,27 @@ const cartSlice = createSlice({
         state.totalPrice = state.cartList.reduce(
         (total, item) => total + (item.productId?.price || 0) * (item.qty || 0),
         0
-        );
+        )
+       // ✅ 삭제 후에도 쿠폰/최종금액 재계산
+        const savedCode = (localStorage.getItem("couponCode") || "").toUpperCase();
+        if (savedCode) {
+          const coupon = COUPONS[savedCode];
+          if (coupon) {
+            state.coupon = { code: savedCode, ...coupon };
+            state.discountAmount = calcDiscount(state.totalPrice, state.coupon);
+            if (state.discountAmount > state.totalPrice) state.discountAmount = state.totalPrice;
+            state.finalPrice = state.totalPrice - state.discountAmount;
+          } else {
+            state.coupon = null;
+            state.discountAmount = 0;
+            state.finalPrice = state.totalPrice;
+            localStorage.removeItem("couponCode");
+          }
+        } else {
+          state.finalPrice = state.totalPrice;
+        };
+
+
       })
       .addCase(deleteCartItem.rejected, (state, action) => {
         state.loading = false;
@@ -210,8 +330,10 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       }) 
+
+
     },
 });
 
 export default cartSlice.reducer;
-export const { initialCart } = cartSlice.actions;
+export const { initialCart, applyCoupon, removeCoupon } = cartSlice.actions;

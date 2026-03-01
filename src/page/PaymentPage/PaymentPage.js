@@ -28,7 +28,7 @@ const PaymentPage = () => {
     city: "",
     zip: "",
   });
-  const {cartList, totalPrice} = useSelector((state)=>state.cart);
+  const {cartList, totalPrice, discountAmount, finalPrice, coupon} = useSelector((state)=>state.cart);
   console.log("shipinfo", shipInfo);
 
   useEffect(() => {
@@ -46,8 +46,12 @@ const PaymentPage = () => {
     event.preventDefault();
     // 오더 생성하기
     const {firstName, lastName, contact, address, city, zip} = shipInfo;
+
+    //  최종 결제금액 계산
+    const payPrice = typeof finalPrice === "number" ? finalPrice : totalPrice;
+
     dispatch(createOrder({
-      totalPrice,
+      totalPrice: payPrice,
       shipTo:{address, city, zip},
       contact:{firstName, lastName, contact},
       orderList: cartList.map((item)=>{
@@ -58,6 +62,8 @@ const PaymentPage = () => {
           size:item.size,
         };
       }),
+      discountAmount,
+      couponCode: coupon?.code || null,
      })
   );
 };
@@ -158,7 +164,13 @@ const PaymentPage = () => {
                   </Form.Group>
                 </Row>
                 <div className="mobile-receipt-area">
-                  <OrderReceipt cartList={cartList} totalPrice={totalPrice}/>
+                  <OrderReceipt 
+                    cartList={cartList} 
+                    totalPrice={totalPrice}
+                    discountAmount={discountAmount}
+                    finalPrice={finalPrice}
+                    coupon={coupon}
+                  />
                 </div>
                 <div>
                   <h2 className="payment-title">결제 정보</h2>
